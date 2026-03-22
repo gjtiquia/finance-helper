@@ -34,6 +34,11 @@ type panelData struct {
 	Error bool
 }
 
+type pdfListData struct {
+	Panel panelData
+	Paths []string
+}
+
 func newWebApp() (*webApp, error) {
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -112,11 +117,19 @@ func (a *webApp) pdfListHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paths := nonEmptyLines(body)
+
 	if strings.TrimSpace(body) == "" {
 		body = "No PDFs found"
 	}
 
-	a.renderPanel(w, panelData{Title: "PDF List", Body: body})
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := a.tmpl.ExecuteTemplate(w, "pdf_list", pdfListData{
+		Panel: panelData{Title: "PDF List", Body: body},
+		Paths: paths,
+	}); err != nil {
+		http.Error(w, "Could not render response", http.StatusInternalServerError)
+	}
 }
 
 func (a *webApp) pdfUploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -355,4 +368,13 @@ func readTextResponse(resp *http.Response) (string, error) {
 
 func webHTTPClient() *http.Client {
 	return &http.Client{Timeout: 30 * time.Second}
+}
+
+func nonEmptyLines(value string) []string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+
+	return strings.Split(trimmed, "\n")
 }

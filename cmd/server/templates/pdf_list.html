@@ -1,0 +1,12 @@
+{{define "pdf_list"}}
+{{template "panel" .Panel}}
+<select id="parse_path" name="path" hx-swap-oob="true" class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" required>
+  {{if .Paths}}
+    {{range .Paths}}
+      <option value="{{.}}">{{.}}</option>
+    {{end}}
+  {{else}}
+    <option value="" selected disabled>No PDFs available</option>
+  {{end}}
+</select>
+{{end}}
