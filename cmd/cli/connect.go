@@ -1,21 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
-
-type config struct {
-	Server string `json:"server"`
-}
 
 func connect(rawURL string) error {
 	serverURL, err := normalizeURL(rawURL)
@@ -92,34 +85,6 @@ func pingServer(serverURL string) error {
 
 	if strings.TrimSpace(string(body)) != "server is running" {
 		return fmt.Errorf("unexpected response body")
-	}
-
-	return nil
-}
-
-func saveConfig(cfg config) error {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return fmt.Errorf("Could not determine config directory")
-	}
-
-	appDir := filepath.Join(configDir, "finance-helper")
-	if err := os.MkdirAll(appDir, 0o755); err != nil {
-		return fmt.Errorf("Could not create config directory")
-	}
-
-	configPath := filepath.Join(appDir, "config.json")
-	file, err := os.Create(configPath)
-	if err != nil {
-		return fmt.Errorf("Could not save config")
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-
-	if err := encoder.Encode(cfg); err != nil {
-		return fmt.Errorf("Could not save config")
 	}
 
 	return nil

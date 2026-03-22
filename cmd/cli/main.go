@@ -23,6 +23,11 @@ func main() {
 			}
 
 			return
+		case "status":
+			if err := status(os.Stdout); err != nil {
+				fmt.Println(err.Error())
+			}
+			return
 		}
 	}
 
