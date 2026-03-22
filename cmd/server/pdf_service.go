@@ -1,0 +1,67 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"sort"
+	"strings"
+)
+
+type pdfService struct {
+	storage pdfStorage
+}
+
+func newPDFService(storage pdfStorage) pdfService {
+	return pdfService{storage: storage}
+}
+
+func (s pdfService) upload(localFilename string, relativePath string, src io.Reader) (string, error) {
+	if !strings.HasSuffix(strings.ToLower(localFilename), ".pdf") {
+		return "", fmt.Errorf("Local file must be a PDF")
+	}
+
+	cleanPath, err := cleanPDFPath(relativePath)
+	if err != nil {
+		return "", err
+	}
+
+	if err := s.storage.save(cleanPath, src); err != nil {
+		return "", err
+	}
+
+	return cleanPath, nil
+}
+
+func (s pdfService) list() ([]string, error) {
+	paths, err := s.storage.listPaths()
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Strings(paths)
+	return paths, nil
+}
+
+func (s pdfService) parse(parserName string, relativePath string) (string, error) {
+	if parserName != "raw" {
+		return "", fmt.Errorf("Unknown parser: %s", parserName)
+	}
+
+	cleanPath, err := cleanPDFPath(relativePath)
+	if err != nil {
+		return "", err
+	}
+
+	size, err := s.storage.fileSize(cleanPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+
+		return "", err
+	}
+
+	return fmt.Sprintf("TODO : parse PDF, returning file size for now: %d", size), nil
+}

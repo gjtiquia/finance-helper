@@ -32,6 +32,12 @@ func main() {
 				fmt.Fprintln(os.Stdout, err.Error())
 			}
 			return
+
+		case "pdf":
+			if err := pdfCommand(os.Stdout, os.Args[2:]); err != nil {
+				fmt.Fprintln(os.Stdout, err.Error())
+			}
+			return
 		}
 	}
 
@@ -46,6 +52,7 @@ func printHelp(w io.Writer) {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Commands:")
 	fmt.Fprintln(w, "  connect <url>  Save and verify the server URL")
+	fmt.Fprintln(w, "  pdf            Upload, list, and parse PDFs")
 	fmt.Fprintln(w, "  status         Show config and server status")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "Flags:")

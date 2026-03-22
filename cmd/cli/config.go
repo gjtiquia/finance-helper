@@ -106,3 +106,16 @@ func loadConfigAtPath(path string) (config, error) {
 
 	return cfg, nil
 }
+
+func configuredServerURL() (string, error) {
+	cfg, _, err := loadConfig()
+	if err != nil {
+		if errors.Is(err, errConfigNotFound) {
+			return "", fmt.Errorf("No server configured. Run: finance-helper connect <url>")
+		}
+
+		return "", err
+	}
+
+	return cfg.Server, nil
+}
