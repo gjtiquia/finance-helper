@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/gjtiquia/finance-helper/internal/api"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -20,7 +21,7 @@ func TestPDFUploadHandler(t *testing.T) {
 	requestBody := &bytes.Buffer{}
 	writer := multipart.NewWriter(requestBody)
 
-	part, err := writer.CreateFormFile("file", "statement.pdf")
+	part, err := writer.CreateFormFile(api.PDFFormFile, "statement.pdf")
 	if err != nil {
 		t.Fatalf("CreateFormFile returned error: %v", err)
 	}
@@ -29,7 +30,7 @@ func TestPDFUploadHandler(t *testing.T) {
 		t.Fatalf("WriteString returned error: %v", err)
 	}
 
-	if err := writer.WriteField("path", "statements/chase/test.pdf"); err != nil {
+	if err := writer.WriteField(api.PDFFormPath, "statements/chase/test.pdf"); err != nil {
 		t.Fatalf("WriteField returned error: %v", err)
 	}
 
@@ -37,7 +38,7 @@ func TestPDFUploadHandler(t *testing.T) {
 		t.Fatalf("Close returned error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/upload", requestBody)
+	req := httptest.NewRequest(http.MethodPost, api.PDFUploadPath, requestBody)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 
@@ -69,7 +70,7 @@ func TestPDFUploadHandlerRejectsNonPDF(t *testing.T) {
 	requestBody := &bytes.Buffer{}
 	writer := multipart.NewWriter(requestBody)
 
-	part, err := writer.CreateFormFile("file", "statement.txt")
+	part, err := writer.CreateFormFile(api.PDFFormFile, "statement.txt")
 	if err != nil {
 		t.Fatalf("CreateFormFile returned error: %v", err)
 	}
@@ -78,7 +79,7 @@ func TestPDFUploadHandlerRejectsNonPDF(t *testing.T) {
 		t.Fatalf("WriteString returned error: %v", err)
 	}
 
-	if err := writer.WriteField("path", "statements/chase/test.pdf"); err != nil {
+	if err := writer.WriteField(api.PDFFormPath, "statements/chase/test.pdf"); err != nil {
 		t.Fatalf("WriteField returned error: %v", err)
 	}
 
@@ -86,7 +87,7 @@ func TestPDFUploadHandlerRejectsNonPDF(t *testing.T) {
 		t.Fatalf("Close returned error: %v", err)
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/upload", requestBody)
+	req := httptest.NewRequest(http.MethodPost, api.PDFUploadPath, requestBody)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	rec := httptest.NewRecorder()
 
@@ -105,7 +106,7 @@ func TestPDFListHandlerRecursive(t *testing.T) {
 	seedPDF(t, tempDir, "statements/chase/a.pdf", "%PDF-1.4\na\n")
 	seedPDF(t, tempDir, "statements/amex/b.pdf", "%PDF-1.4\nb\n")
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/pdf", nil)
+	req := httptest.NewRequest(http.MethodGet, api.PDFListPath, nil)
 	rec := httptest.NewRecorder()
 
 	pdfListHandler(service).ServeHTTP(rec, req)
@@ -138,10 +139,10 @@ func TestPDFParseHandlerRaw(t *testing.T) {
 	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
 
 	form := url.Values{
-		"parser": []string{"raw"},
-		"path":   []string{"statements/chase/test.pdf"},
+		api.PDFFormParser: []string{api.PDFParserRaw},
+		api.PDFFormPath:   []string{"statements/chase/test.pdf"},
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest(http.MethodPost, api.PDFParsePath, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
@@ -166,10 +167,10 @@ func TestPDFParseHandlerMissingFile(t *testing.T) {
 	service := newPDFService(newPDFStorage(tempDir))
 
 	form := url.Values{
-		"parser": []string{"raw"},
-		"path":   []string{"statements/chase/missing.pdf"},
+		api.PDFFormParser: []string{api.PDFParserRaw},
+		api.PDFFormPath:   []string{"statements/chase/missing.pdf"},
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest(http.MethodPost, api.PDFParsePath, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
@@ -186,10 +187,10 @@ func TestPDFParseHandlerUnknownParser(t *testing.T) {
 	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
 
 	form := url.Values{
-		"parser": []string{"unknown"},
-		"path":   []string{"statements/chase/test.pdf"},
+		api.PDFFormParser: []string{"unknown"},
+		api.PDFFormPath:   []string{"statements/chase/test.pdf"},
 	}
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req := httptest.NewRequest(http.MethodPost, api.PDFParsePath, strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 

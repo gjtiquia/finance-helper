@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/gjtiquia/finance-helper/internal/api"
 	"io"
 	"os"
 	"sort"
@@ -45,7 +46,7 @@ func (s pdfService) list() ([]string, error) {
 }
 
 func (s pdfService) parse(parserName string, relativePath string) (string, error) {
-	if parserName != "raw" {
+	if parserName != api.PDFParserRaw {
 		return "", fmt.Errorf("Unknown parser: %s", parserName)
 	}
 

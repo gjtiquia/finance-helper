@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gjtiquia/finance-helper/internal/api"
 	"io"
 	"mime/multipart"
 	"net/url"
@@ -69,8 +70,8 @@ func pdfUpload(w io.Writer, localPath string, serverPath string) error {
 	}
 	defer file.Close()
 
-	responseBody, err := postMultipartText("/api/v1/pdf/upload", func(writer *multipart.Writer) error {
-		part, err := writer.CreateFormFile("file", filepath.Base(localPath))
+	responseBody, err := postMultipartText(api.PDFUploadPath, func(writer *multipart.Writer) error {
+		part, err := writer.CreateFormFile(api.PDFFormFile, filepath.Base(localPath))
 		if err != nil {
 			return fmt.Errorf("Could not create upload request")
 		}
@@ -79,7 +80,7 @@ func pdfUpload(w io.Writer, localPath string, serverPath string) error {
 			return fmt.Errorf("Could not read local PDF")
 		}
 
-		if err := writer.WriteField("path", serverPath); err != nil {
+		if err := writer.WriteField(api.PDFFormPath, serverPath); err != nil {
 			return fmt.Errorf("Could not create upload request")
 		}
 
@@ -94,7 +95,7 @@ func pdfUpload(w io.Writer, localPath string, serverPath string) error {
 }
 
 func pdfList(w io.Writer) error {
-	body, err := getText("/api/v1/pdf")
+	body, err := getText(api.PDFListPath)
 	if err != nil {
 		return err
 	}
@@ -104,13 +105,13 @@ func pdfList(w io.Writer) error {
 }
 
 func pdfParse(w io.Writer, parserName string, serverPath string) error {
-	if parserName != "raw" {
+	if parserName != api.PDFParserRaw {
 		return fmt.Errorf("Unknown parser: %s", parserName)
 	}
 
-	body, err := postFormText("/api/v1/pdf/parse", url.Values{
-		"parser": []string{parserName},
-		"path":   []string{serverPath},
+	body, err := postFormText(api.PDFParsePath, url.Values{
+		api.PDFFormParser: []string{parserName},
+		api.PDFFormPath:   []string{serverPath},
 	})
 	if err != nil {
 		return err

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/gjtiquia/finance-helper/internal/api"
 	"net/http"
 	"os"
 	"strings"
@@ -15,14 +16,14 @@ func pdfUploadHandler(service pdfService) http.HandlerFunc {
 			return
 		}
 
-		file, header, err := r.FormFile("file")
+		file, header, err := r.FormFile(api.PDFFormFile)
 		if err != nil {
 			http.Error(w, "Missing PDF file", http.StatusBadRequest)
 			return
 		}
 		defer file.Close()
 
-		storedPath, err := service.upload(header.Filename, r.FormValue("path"), file)
+		storedPath, err := service.upload(header.Filename, r.FormValue(api.PDFFormPath), file)
 		if err != nil {
 			switch {
 			case errors.Is(err, errInvalidPDFPath):
@@ -68,7 +69,7 @@ func pdfParseHandler(service pdfService) http.HandlerFunc {
 			return
 		}
 
-		result, err := service.parse(r.FormValue("parser"), r.FormValue("path"))
+		result, err := service.parse(r.FormValue(api.PDFFormParser), r.FormValue(api.PDFFormPath))
 		if err != nil {
 			switch {
 			case errors.Is(err, errInvalidPDFPath):

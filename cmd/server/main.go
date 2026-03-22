@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gjtiquia/finance-helper/internal/api"
 	"log"
 	"net/http"
 	"os"
@@ -24,9 +25,9 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		fmt.Fprintln(w, "server is running")
 	})
-	mux.HandleFunc("GET /api/v1/pdf", pdfListHandler(pdfService))
-	mux.HandleFunc("POST /api/v1/pdf/upload", pdfUploadHandler(pdfService))
-	mux.HandleFunc("POST /api/v1/pdf/parse", pdfParseHandler(pdfService))
+	mux.HandleFunc("GET "+api.PDFListPath, pdfListHandler(pdfService))
+	mux.HandleFunc("POST "+api.PDFUploadPath, pdfUploadHandler(pdfService))
+	mux.HandleFunc("POST "+api.PDFParsePath, pdfParseHandler(pdfService))
 
 	addr := ":" + port
 	log.Printf("server listening on %s", addr)
