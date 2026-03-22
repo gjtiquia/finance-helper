@@ -1,0 +1,209 @@
+package main
+
+import (
+	"bytes"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+func TestPDFUploadHandler(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+
+	requestBody := &bytes.Buffer{}
+	writer := multipart.NewWriter(requestBody)
+
+	part, err := writer.CreateFormFile("file", "statement.pdf")
+	if err != nil {
+		t.Fatalf("CreateFormFile returned error: %v", err)
+	}
+
+	if _, err := io.WriteString(part, "%PDF-1.4\nstatement\n"); err != nil {
+		t.Fatalf("WriteString returned error: %v", err)
+	}
+
+	if err := writer.WriteField("path", "statements/chase/test.pdf"); err != nil {
+		t.Fatalf("WriteField returned error: %v", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/upload", requestBody)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
+
+	pdfUploadHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	if rec.Body.String() != "Uploaded: statements/chase/test.pdf\n" {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+
+	storedPath := filepath.Join(tempDir, "statements", "chase", "test.pdf")
+	if _, err := os.Stat(storedPath); err != nil {
+		t.Fatalf("stored file missing: %v", err)
+	}
+}
+
+func TestPDFUploadHandlerRejectsNonPDF(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+
+	requestBody := &bytes.Buffer{}
+	writer := multipart.NewWriter(requestBody)
+
+	part, err := writer.CreateFormFile("file", "statement.txt")
+	if err != nil {
+		t.Fatalf("CreateFormFile returned error: %v", err)
+	}
+
+	if _, err := io.WriteString(part, "not a pdf"); err != nil {
+		t.Fatalf("WriteString returned error: %v", err)
+	}
+
+	if err := writer.WriteField("path", "statements/chase/test.pdf"); err != nil {
+		t.Fatalf("WriteField returned error: %v", err)
+	}
+
+	if err := writer.Close(); err != nil {
+		t.Fatalf("Close returned error: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/upload", requestBody)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	rec := httptest.NewRecorder()
+
+	pdfUploadHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+
+	if rec.Body.String() != "Local file must be a PDF\n" {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestPDFListHandlerRecursive(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+
+	seedPDF(t, tempDir, "z-last.pdf", "%PDF-1.4\nlast\n")
+	seedPDF(t, tempDir, "statements/chase/a.pdf", "%PDF-1.4\na\n")
+	seedPDF(t, tempDir, "statements/amex/b.pdf", "%PDF-1.4\nb\n")
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/pdf", nil)
+	rec := httptest.NewRecorder()
+
+	pdfListHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	want := strings.Join([]string{
+		"statements/amex/b.pdf",
+		"statements/chase/a.pdf",
+		"z-last.pdf",
+	}, "\n") + "\n"
+
+	if rec.Body.String() != want {
+		t.Fatalf("body = %q, want %q", rec.Body.String(), want)
+	}
+}
+
+func TestPDFParseHandlerRaw(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
+
+	form := url.Values{
+		"parser": []string{"raw"},
+		"path":   []string{"statements/chase/test.pdf"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	pdfParseHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+
+	if rec.Body.String() != "TODO : parse PDF, returning file size for now: 15\n" {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestPDFParseHandlerMissingFile(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+
+	form := url.Values{
+		"parser": []string{"raw"},
+		"path":   []string{"statements/chase/missing.pdf"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	pdfParseHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
+	}
+
+	if rec.Body.String() != "PDF not found\n" {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func TestPDFParseHandlerUnknownParser(t *testing.T) {
+	tempDir := t.TempDir()
+	service := newPDFService(newPDFStorage(tempDir))
+	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
+
+	form := url.Values{
+		"parser": []string{"unknown"},
+		"path":   []string{"statements/chase/test.pdf"},
+	}
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/pdf/parse", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+
+	pdfParseHandler(service).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+
+	if rec.Body.String() != "Unknown parser: unknown\n" {
+		t.Fatalf("body = %q", rec.Body.String())
+	}
+}
+
+func seedPDF(t *testing.T, root string, relativePath string, contents string) {
+	t.Helper()
+
+	fullPath := filepath.Join(root, filepath.FromSlash(relativePath))
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+		t.Fatalf("MkdirAll returned error: %v", err)
+	}
+
+	if err := os.WriteFile(fullPath, []byte(contents), 0o644); err != nil {
+		t.Fatalf("WriteFile returned error: %v", err)
+	}
+}
