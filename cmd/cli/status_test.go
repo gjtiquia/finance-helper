@@ -8,9 +8,18 @@ import (
 
 func TestStatusWithoutConfig(t *testing.T) {
 	tempDir := t.TempDir()
+	originalCurrentGOOS := currentGOOS
+	originalGetenv := getenv
+	originalUserHomeDir := userHomeDir
 	originalUserConfigDir := userConfigDir
+	currentGOOS = "darwin"
+	getenv = func(string) string { return "" }
+	userHomeDir = func() (string, error) { return tempDir, nil }
 	userConfigDir = func() (string, error) { return tempDir, nil }
 	t.Cleanup(func() {
+		currentGOOS = originalCurrentGOOS
+		getenv = originalGetenv
+		userHomeDir = originalUserHomeDir
 		userConfigDir = originalUserConfigDir
 	})
 
@@ -31,9 +40,18 @@ func TestStatusWithoutConfig(t *testing.T) {
 
 func TestSaveAndLoadConfig(t *testing.T) {
 	tempDir := t.TempDir()
+	originalCurrentGOOS := currentGOOS
+	originalGetenv := getenv
+	originalUserHomeDir := userHomeDir
 	originalUserConfigDir := userConfigDir
+	currentGOOS = "darwin"
+	getenv = func(string) string { return "" }
+	userHomeDir = func() (string, error) { return tempDir, nil }
 	userConfigDir = func() (string, error) { return tempDir, nil }
 	t.Cleanup(func() {
+		currentGOOS = originalCurrentGOOS
+		getenv = originalGetenv
+		userHomeDir = originalUserHomeDir
 		userConfigDir = originalUserConfigDir
 	})
 
@@ -51,7 +69,7 @@ func TestSaveAndLoadConfig(t *testing.T) {
 		t.Fatalf("loadConfig returned %+v, want %+v", got, want)
 	}
 
-	if !strings.HasSuffix(path, "finance-helper/config.json") {
+	if !strings.HasSuffix(path, ".config/finance-helper/config.json") {
 		t.Fatalf("loadConfig returned unexpected path: %q", path)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 type config struct {
@@ -14,15 +15,40 @@ type config struct {
 
 var errConfigNotFound = errors.New("config not found")
 
+var currentGOOS = runtime.GOOS
+var getenv = os.Getenv
+var userHomeDir = os.UserHomeDir
 var userConfigDir = os.UserConfigDir
 
 func configPath() (string, error) {
-	configDir, err := userConfigDir()
+	configDir, err := configBaseDir()
 	if err != nil {
-		return "", fmt.Errorf("Could not determine config directory")
+		return "", err
 	}
 
 	return filepath.Join(configDir, "finance-helper", "config.json"), nil
+}
+
+func configBaseDir() (string, error) {
+	if currentGOOS == "windows" {
+		configDir, err := userConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("Could not determine config directory")
+		}
+
+		return configDir, nil
+	}
+
+	if xdgConfigHome := getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
+		return xdgConfigHome, nil
+	}
+
+	homeDir, err := userHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("Could not determine home directory")
+	}
+
+	return filepath.Join(homeDir, ".config"), nil
 }
 
 func saveConfig(cfg config) error {
