@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func connect(rawURL string) error {
+func connect(w io.Writer, rawURL string) error {
 	serverURL, err := normalizeURL(rawURL)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func connect(rawURL string) error {
 		return err
 	}
 
-	fmt.Printf("Connected to %s\n", serverURL)
+	fmt.Fprintf(w, "Connected to %s\n", serverURL)
 	return nil
 }
 
