@@ -7,7 +7,16 @@ import (
 )
 
 func status(w io.Writer) error {
-	cfg, path, err := loadConfig()
+	path, err := configPath()
+	if err != nil {
+		return err
+	}
+
+	return statusAtPath(w, path)
+}
+
+func statusAtPath(w io.Writer, path string) error {
+	cfg, err := loadConfigAtPath(path)
 	if err != nil {
 		if errors.Is(err, errConfigNotFound) {
 			fmt.Fprintln(w, "Config: not found")

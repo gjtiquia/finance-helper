@@ -2,29 +2,15 @@ package main
 
 import (
 	"bytes"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
 func TestStatusWithoutConfig(t *testing.T) {
-	tempDir := t.TempDir()
-	originalCurrentGOOS := currentGOOS
-	originalGetenv := getenv
-	originalUserHomeDir := userHomeDir
-	originalUserConfigDir := userConfigDir
-	currentGOOS = "darwin"
-	getenv = func(string) string { return "" }
-	userHomeDir = func() (string, error) { return tempDir, nil }
-	userConfigDir = func() (string, error) { return tempDir, nil }
-	t.Cleanup(func() {
-		currentGOOS = originalCurrentGOOS
-		getenv = originalGetenv
-		userHomeDir = originalUserHomeDir
-		userConfigDir = originalUserConfigDir
-	})
-
+	configPath := filepath.Join(t.TempDir(), "config.json")
 	var output bytes.Buffer
-	if err := status(&output); err != nil {
+	if err := statusAtPath(&output, configPath); err != nil {
 		t.Fatalf("status returned error: %v", err)
 	}
 
@@ -39,37 +25,18 @@ func TestStatusWithoutConfig(t *testing.T) {
 }
 
 func TestSaveAndLoadConfig(t *testing.T) {
-	tempDir := t.TempDir()
-	originalCurrentGOOS := currentGOOS
-	originalGetenv := getenv
-	originalUserHomeDir := userHomeDir
-	originalUserConfigDir := userConfigDir
-	currentGOOS = "darwin"
-	getenv = func(string) string { return "" }
-	userHomeDir = func() (string, error) { return tempDir, nil }
-	userConfigDir = func() (string, error) { return tempDir, nil }
-	t.Cleanup(func() {
-		currentGOOS = originalCurrentGOOS
-		getenv = originalGetenv
-		userHomeDir = originalUserHomeDir
-		userConfigDir = originalUserConfigDir
-	})
-
+	configPath := filepath.Join(t.TempDir(), "finance-helper", "config.json")
 	want := config{Server: "http://localhost:3000"}
-	if err := saveConfig(want); err != nil {
-		t.Fatalf("saveConfig returned error: %v", err)
+	if err := saveConfigAtPath(configPath, want); err != nil {
+		t.Fatalf("saveConfigAtPath returned error: %v", err)
 	}
 
-	got, path, err := loadConfig()
+	got, err := loadConfigAtPath(configPath)
 	if err != nil {
-		t.Fatalf("loadConfig returned error: %v", err)
+		t.Fatalf("loadConfigAtPath returned error: %v", err)
 	}
 
 	if got != want {
-		t.Fatalf("loadConfig returned %+v, want %+v", got, want)
-	}
-
-	if !strings.HasSuffix(path, ".config/finance-helper/config.json") {
-		t.Fatalf("loadConfig returned unexpected path: %q", path)
+		t.Fatalf("loadConfigAtPath returned %+v, want %+v", got, want)
 	}
 }

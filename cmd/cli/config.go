@@ -15,11 +15,6 @@ type config struct {
 
 var errConfigNotFound = errors.New("config not found")
 
-var currentGOOS = runtime.GOOS
-var getenv = os.Getenv
-var userHomeDir = os.UserHomeDir
-var userConfigDir = os.UserConfigDir
-
 func configPath() (string, error) {
 	configDir, err := configBaseDir()
 	if err != nil {
@@ -30,8 +25,8 @@ func configPath() (string, error) {
 }
 
 func configBaseDir() (string, error) {
-	if currentGOOS == "windows" {
-		configDir, err := userConfigDir()
+	if runtime.GOOS == "windows" {
+		configDir, err := os.UserConfigDir()
 		if err != nil {
 			return "", fmt.Errorf("Could not determine config directory")
 		}
@@ -39,11 +34,11 @@ func configBaseDir() (string, error) {
 		return configDir, nil
 	}
 
-	if xdgConfigHome := getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
+	if xdgConfigHome := os.Getenv("XDG_CONFIG_HOME"); xdgConfigHome != "" {
 		return xdgConfigHome, nil
 	}
 
-	homeDir, err := userHomeDir()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("Could not determine home directory")
 	}
@@ -56,6 +51,11 @@ func saveConfig(cfg config) error {
 	if err != nil {
 		return err
 	}
+
+	return saveConfigAtPath(path, cfg)
+}
+
+func saveConfigAtPath(path string, cfg config) error {
 
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("Could not create config directory")
@@ -83,20 +83,26 @@ func loadConfig() (config, string, error) {
 		return config{}, "", err
 	}
 
+	cfg, err := loadConfigAtPath(path)
+	return cfg, path, err
+}
+
+func loadConfigAtPath(path string) (config, error) {
+
 	file, err := os.Open(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return config{}, path, errConfigNotFound
+			return config{}, errConfigNotFound
 		}
 
-		return config{}, path, fmt.Errorf("Could not read config")
+		return config{}, fmt.Errorf("Could not read config")
 	}
 	defer file.Close()
 
 	var cfg config
 	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
-		return config{}, path, fmt.Errorf("Could not parse config")
+		return config{}, fmt.Errorf("Could not parse config")
 	}
 
-	return cfg, path, nil
+	return cfg, nil
 }
