@@ -22,5 +22,6 @@ const (
 	PDFParserRaw6    = "raw-6"
 	PDFParserRaw7    = "raw-7"
 	PDFParserRaw8    = "raw-8"
+	PDFParserRaw9    = "raw-9"
 	PDFParserRawJSON = "raw-json"
 )

@@ -683,8 +683,28 @@ type Row struct {
 	Content  TextHorizontal
 }
 
+// TextChunk represents a decoded text chunk with position.
+type TextChunk struct {
+	S string
+	X float64
+	Y float64
+}
+
 // Rows is a list of rows
 type Rows []*Row
+
+// GetTextChunks returns the page's text as decoded positioned chunks.
+func (p Page) GetTextChunks() (chunks []TextChunk, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			chunks = nil
+			err = errors.New(fmt.Sprint(r))
+		}
+	}()
+
+	chunks = p.collectTextChunks()
+	return chunks, nil
+}
 
 // GetTextByRow returns the page's all text grouped by rows
 func (p Page) GetTextByRow() (Rows, error) {
@@ -698,29 +718,17 @@ func (p Page) GetTextByRow() (Rows, error) {
 		}
 	}()
 
-	showText := func(enc TextEncoding, currentX, currentY float64, s string) {
-		var textBuilder bytes.Buffer
-		for _, ch := range enc.Decode(s) {
-			_, err := textBuilder.WriteRune(ch)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		// if DebugOn {
-		// 	fmt.Println(textBuilder.String())
-		// }
-
+	for _, chunk := range p.collectTextChunks() {
 		text := Text{
-			S: textBuilder.String(),
-			X: currentX,
-			Y: currentY,
+			S: chunk.S,
+			X: chunk.X,
+			Y: chunk.Y,
 		}
 
 		var currentRow *Row
 		rowFound := false
 		for _, row := range result {
-			if int64(currentY) == row.Position {
+			if int64(chunk.Y) == row.Position {
 				currentRow = row
 				rowFound = true
 				break
@@ -729,7 +737,7 @@ func (p Page) GetTextByRow() (Rows, error) {
 
 		if !rowFound {
 			currentRow = &Row{
-				Position: int64(currentY),
+				Position: int64(chunk.Y),
 				Content:  TextHorizontal{},
 			}
 			result = append(result, currentRow)
@@ -737,8 +745,6 @@ func (p Page) GetTextByRow() (Rows, error) {
 
 		currentRow.Content = append(currentRow.Content, text)
 	}
-
-	p.walkTextBlocks(showText)
 
 	for _, row := range result {
 		sort.Sort(row.Content)
@@ -749,6 +755,33 @@ func (p Page) GetTextByRow() (Rows, error) {
 	})
 
 	return result, err
+}
+
+func (p Page) collectTextChunks() []TextChunk {
+	chunks := make([]TextChunk, 0)
+	showText := func(enc TextEncoding, currentX, currentY float64, s string) {
+		var textBuilder bytes.Buffer
+		for _, ch := range enc.Decode(s) {
+			_, err := textBuilder.WriteRune(ch)
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		value := textBuilder.String()
+		if value == "" {
+			return
+		}
+
+		chunks = append(chunks, TextChunk{
+			S: value,
+			X: currentX,
+			Y: currentY,
+		})
+	}
+
+	p.walkTextBlocks(showText)
+	return chunks
 }
 
 func (p Page) walkTextBlocks(walker func(enc TextEncoding, x, y float64, s string)) {

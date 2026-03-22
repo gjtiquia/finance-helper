@@ -65,6 +65,7 @@ func printPDFHelp(w io.Writer) {
 	fmt.Fprintln(w, "  finance-helper pdf parse raw-6 statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw-7 statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw-8 statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-9 statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw-json statements/chase/2026-03.pdf")
 }
 
@@ -132,7 +133,7 @@ func pdfParse(w io.Writer, parserName string, serverPath string) error {
 
 func isSupportedPDFParser(parserName string) bool {
 	switch parserName {
-	case api.PDFParserRaw, api.PDFParserRaw1, api.PDFParserRaw2, api.PDFParserRaw3, api.PDFParserRaw4, api.PDFParserRaw5, api.PDFParserRaw6, api.PDFParserRaw7, api.PDFParserRaw8, api.PDFParserRawJSON:
+	case api.PDFParserRaw, api.PDFParserRaw1, api.PDFParserRaw2, api.PDFParserRaw3, api.PDFParserRaw4, api.PDFParserRaw5, api.PDFParserRaw6, api.PDFParserRaw7, api.PDFParserRaw8, api.PDFParserRaw9, api.PDFParserRawJSON:
 		return true
 	default:
 		return false
