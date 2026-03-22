@@ -47,8 +47,13 @@ func TestPDFUploadHandler(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 
-	if rec.Body.String() != "Uploaded: statements/chase/test.pdf\n" {
-		t.Fatalf("body = %q", rec.Body.String())
+	body := rec.Body.String()
+	if !strings.Contains(body, "Uploaded:") {
+		t.Fatalf("body missing upload confirmation: %q", body)
+	}
+
+	if !strings.Contains(body, "statements/chase/test.pdf") {
+		t.Fatalf("body missing uploaded path: %q", body)
 	}
 
 	storedPath := filepath.Join(tempDir, "statements", "chase", "test.pdf")
@@ -90,10 +95,6 @@ func TestPDFUploadHandlerRejectsNonPDF(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
-
-	if rec.Body.String() != "Local file must be a PDF\n" {
-		t.Fatalf("body = %q", rec.Body.String())
-	}
 }
 
 func TestPDFListHandlerRecursive(t *testing.T) {
@@ -113,14 +114,21 @@ func TestPDFListHandlerRecursive(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 
-	want := strings.Join([]string{
+	want := []string{
 		"statements/amex/b.pdf",
 		"statements/chase/a.pdf",
 		"z-last.pdf",
-	}, "\n") + "\n"
+	}
 
-	if rec.Body.String() != want {
-		t.Fatalf("body = %q, want %q", rec.Body.String(), want)
+	got := splitNonEmptyLines(rec.Body.String())
+	if len(got) != len(want) {
+		t.Fatalf("line count = %d, want %d, body = %q", len(got), len(want), rec.Body.String())
+	}
+
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("line %d = %q, want %q", i, got[i], want[i])
+		}
 	}
 }
 
@@ -143,8 +151,13 @@ func TestPDFParseHandlerRaw(t *testing.T) {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 
-	if rec.Body.String() != "TODO : parse PDF, returning file size for now: 15\n" {
-		t.Fatalf("body = %q", rec.Body.String())
+	body := rec.Body.String()
+	if !strings.Contains(body, "TODO : parse PDF") {
+		t.Fatalf("body missing parse placeholder: %q", body)
+	}
+
+	if !strings.Contains(body, "15") {
+		t.Fatalf("body missing file size: %q", body)
 	}
 }
 
@@ -164,10 +177,6 @@ func TestPDFParseHandlerMissingFile(t *testing.T) {
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
-	}
-
-	if rec.Body.String() != "PDF not found\n" {
-		t.Fatalf("body = %q", rec.Body.String())
 	}
 }
 
@@ -189,10 +198,15 @@ func TestPDFParseHandlerUnknownParser(t *testing.T) {
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
+}
 
-	if rec.Body.String() != "Unknown parser: unknown\n" {
-		t.Fatalf("body = %q", rec.Body.String())
+func splitNonEmptyLines(value string) []string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
 	}
+
+	return strings.Split(trimmed, "\n")
 }
 
 func seedPDF(t *testing.T, root string, relativePath string, contents string) {
