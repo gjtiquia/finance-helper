@@ -57,6 +57,10 @@ func printPDFHelp(w io.Writer) {
 	fmt.Fprintln(w, "  finance-helper pdf upload ./statement.pdf statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf list")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-1 statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-2 statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-3 statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-4 statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw-json statements/chase/2026-03.pdf")
 }
 
@@ -106,7 +110,7 @@ func pdfList(w io.Writer) error {
 }
 
 func pdfParse(w io.Writer, parserName string, serverPath string) error {
-	if parserName != api.PDFParserRaw && parserName != api.PDFParserRawJSON {
+	if !isSupportedPDFParser(parserName) {
 		return fmt.Errorf("Unknown parser: %s", parserName)
 	}
 
@@ -120,4 +124,13 @@ func pdfParse(w io.Writer, parserName string, serverPath string) error {
 
 	fmt.Fprint(w, body)
 	return nil
+}
+
+func isSupportedPDFParser(parserName string) bool {
+	switch parserName {
+	case api.PDFParserRaw, api.PDFParserRaw1, api.PDFParserRaw2, api.PDFParserRaw3, api.PDFParserRaw4, api.PDFParserRawJSON:
+		return true
+	default:
+		return false
+	}
 }

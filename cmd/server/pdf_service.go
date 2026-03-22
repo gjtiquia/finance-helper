@@ -46,7 +46,7 @@ func (s pdfService) list() ([]string, error) {
 }
 
 func (s pdfService) parse(parserName string, relativePath string) (string, error) {
-	if parserName != api.PDFParserRaw && parserName != api.PDFParserRawJSON {
+	if !isSupportedPDFParser(parserName) {
 		return "", fmt.Errorf("Unknown parser: %s", parserName)
 	}
 
@@ -75,6 +75,30 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 			return "", err
 		}
 		return result, nil
+	case api.PDFParserRaw1:
+		result, err := extractRaw1PlainTextFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	case api.PDFParserRaw2:
+		result, err := extractRaw2PlainTextFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	case api.PDFParserRaw3:
+		result, err := extractRaw3PlainTextFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	case api.PDFParserRaw4:
+		result, err := extractRaw4PlainTextFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
 	case api.PDFParserRawJSON:
 		result, err := extractRawJSONFromPDF(fullPath)
 		if err != nil {
@@ -84,4 +108,13 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 	}
 
 	return "", fmt.Errorf("Unknown parser: %s", parserName)
+}
+
+func isSupportedPDFParser(parserName string) bool {
+	switch parserName {
+	case api.PDFParserRaw, api.PDFParserRaw1, api.PDFParserRaw2, api.PDFParserRaw3, api.PDFParserRaw4, api.PDFParserRawJSON:
+		return true
+	default:
+		return false
+	}
 }
