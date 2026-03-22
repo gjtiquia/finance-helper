@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 func pdfCommand(w io.Writer, args []string) error {
@@ -66,77 +63,43 @@ func pdfUpload(w io.Writer, localPath string, serverPath string) error {
 		return fmt.Errorf("Local file must be a PDF")
 	}
 
-	serverURL, err := configuredServerURL()
-	if err != nil {
-		return err
-	}
-
 	file, err := os.Open(localPath)
 	if err != nil {
 		return fmt.Errorf("Could not open local PDF")
 	}
 	defer file.Close()
 
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	part, err := writer.CreateFormFile("file", filepath.Base(localPath))
-	if err != nil {
-		return fmt.Errorf("Could not create upload request")
-	}
+	responseBody, err := postMultipartText("/api/v1/pdf/upload", func(writer *multipart.Writer) error {
+		part, err := writer.CreateFormFile("file", filepath.Base(localPath))
+		if err != nil {
+			return fmt.Errorf("Could not create upload request")
+		}
 
-	if _, err := io.Copy(part, file); err != nil {
-		return fmt.Errorf("Could not read local PDF")
-	}
+		if _, err := io.Copy(part, file); err != nil {
+			return fmt.Errorf("Could not read local PDF")
+		}
 
-	if err := writer.WriteField("path", serverPath); err != nil {
-		return fmt.Errorf("Could not create upload request")
-	}
+		if err := writer.WriteField("path", serverPath); err != nil {
+			return fmt.Errorf("Could not create upload request")
+		}
 
-	if err := writer.Close(); err != nil {
-		return fmt.Errorf("Could not create upload request")
-	}
-
-	resp, err := httpClient().Post(serverURL+"/api/v1/pdf/upload", writer.FormDataContentType(), &body)
-	if err != nil {
-		return fmt.Errorf("Could not reach server")
-	}
-	defer resp.Body.Close()
-
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Could not read server response")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s", strings.TrimSpace(string(responseBody)))
-	}
-
-	fmt.Fprint(w, string(responseBody))
-	return nil
-}
-
-func pdfList(w io.Writer) error {
-	serverURL, err := configuredServerURL()
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	resp, err := httpClient().Get(serverURL + "/api/v1/pdf")
+	fmt.Fprint(w, responseBody)
+	return nil
+}
+
+func pdfList(w io.Writer) error {
+	body, err := getText("/api/v1/pdf")
 	if err != nil {
-		return fmt.Errorf("Could not reach server")
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Could not read server response")
+		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s", strings.TrimSpace(string(body)))
-	}
-
-	fmt.Fprint(w, string(body))
+	fmt.Fprint(w, body)
 	return nil
 }
 
@@ -145,40 +108,14 @@ func pdfParse(w io.Writer, parserName string, serverPath string) error {
 		return fmt.Errorf("Unknown parser: %s", parserName)
 	}
 
-	serverURL, err := configuredServerURL()
+	body, err := postFormText("/api/v1/pdf/parse", url.Values{
+		"parser": []string{parserName},
+		"path":   []string{serverPath},
+	})
 	if err != nil {
 		return err
 	}
 
-	form := strings.NewReader(url.Values{
-		"parser": []string{parserName},
-		"path":   []string{serverPath},
-	}.Encode())
-	req, err := http.NewRequest(http.MethodPost, serverURL+"/api/v1/pdf/parse", form)
-	if err != nil {
-		return fmt.Errorf("Could not create parse request")
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := httpClient().Do(req)
-	if err != nil {
-		return fmt.Errorf("Could not reach server")
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Could not read server response")
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s", strings.TrimSpace(string(body)))
-	}
-
-	fmt.Fprint(w, string(body))
+	fmt.Fprint(w, body)
 	return nil
-}
-
-func httpClient() *http.Client {
-	return &http.Client{Timeout: 30 * time.Second}
 }
