@@ -1,0 +1,151 @@
+{{define "index"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>finance-helper</title>
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['Iowan Old Style', 'Palatino Linotype', 'Palatino', 'serif'],
+              mono: ['Menlo', 'Consolas', 'monospace']
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body class="font-display text-stone-900 bg-[radial-gradient(circle_at_top_right,_#efe6d9,_#f4f1ea)] min-h-screen">
+<main class="mx-auto max-w-4xl px-4 py-6 md:py-10">
+  <h1 class="text-4xl tracking-tight">finance-helper</h1>
+  <p class="mt-1 text-stone-600">Tabbed frontend using Go templates and htmx.</p>
+
+  <nav class="mt-6 overflow-x-auto" role="tablist" aria-label="finance helper workflows">
+    <div class="inline-flex min-w-full gap-2 rounded-xl border border-stone-300/80 bg-amber-50/70 p-2 shadow-lg shadow-stone-300/30 md:min-w-0">
+      <button id="tab-connect" type="button" role="tab" aria-selected="true" aria-controls="panel-connect" data-tab-target="panel-connect" class="tab-btn flex-1 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition">Connect</button>
+      <button id="tab-status" type="button" role="tab" aria-selected="false" aria-controls="panel-status" data-tab-target="panel-status" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">Status</button>
+      <button id="tab-pdf" type="button" role="tab" aria-selected="false" aria-controls="panel-pdf" data-tab-target="panel-pdf" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">PDF</button>
+    </div>
+  </nav>
+
+  <section id="panel-connect" role="tabpanel" aria-labelledby="tab-connect" class="tab-panel mt-4 rounded-xl border border-stone-300/80 bg-amber-50/70 p-4 shadow-lg shadow-stone-300/30">
+    <h2 class="text-lg font-semibold">Connect</h2>
+    <form hx-post="/ui/connect" hx-target="#connect-result" hx-swap="innerHTML">
+      <label class="mt-3 block text-sm text-stone-700" for="server_url">Server URL</label>
+      <input class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" id="server_url" name="server_url" value="{{.SuggestedServerURL}}" required>
+      <button class="mt-3 w-full rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105" type="submit">Connect</button>
+    </form>
+    <div id="connect-result">
+      {{if .ConnectedServerURL}}
+        <div class="mt-3 rounded-md border border-stone-300 bg-white p-3"><h3 class="mb-2 text-sm font-semibold">Connect</h3><pre class="font-mono text-xs whitespace-pre-wrap break-words">Connected to {{.ConnectedServerURL}}</pre></div>
+      {{end}}
+    </div>
+  </section>
+
+  <section id="panel-status" role="tabpanel" aria-labelledby="tab-status" class="tab-panel mt-4 hidden rounded-xl border border-stone-300/80 bg-amber-50/70 p-4 shadow-lg shadow-stone-300/30">
+    <h2 class="text-lg font-semibold">Status</h2>
+    <button class="mt-3 w-full rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105" hx-get="/ui/status" hx-target="#status-result" hx-swap="innerHTML">Check Status</button>
+    <div id="status-result"></div>
+  </section>
+
+  <section id="panel-pdf" role="tabpanel" aria-labelledby="tab-pdf" class="tab-panel mt-4 hidden rounded-xl border border-stone-300/80 bg-amber-50/70 p-4 shadow-lg shadow-stone-300/30">
+    <h2 class="text-lg font-semibold">PDF</h2>
+
+    <div class="mt-3 grid gap-4 md:grid-cols-2">
+      <div class="rounded-lg border border-stone-300 bg-white p-3">
+        <h3 class="text-sm font-semibold">Upload</h3>
+        <form class="mt-2" hx-post="/ui/pdf/upload" hx-target="#upload-result" hx-swap="innerHTML" enctype="multipart/form-data">
+          <label class="block text-sm text-stone-700" for="file">Local PDF</label>
+          <input class="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-2 file:py-1 file:text-stone-700" id="file" type="file" name="file" accept="application/pdf" required>
+          <label class="mt-3 block text-sm text-stone-700" for="upload_path">Server Relative Path</label>
+          <input class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" id="upload_path" name="path" placeholder="statements/chase/2026-03.pdf" required>
+          <button class="mt-3 w-full rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105" type="submit">Upload</button>
+        </form>
+        <div id="upload-result"></div>
+      </div>
+
+      <div class="rounded-lg border border-stone-300 bg-white p-3">
+        <h3 class="text-sm font-semibold">List</h3>
+        <button class="mt-2 w-full rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105" hx-get="/ui/pdf/list" hx-target="#list-result" hx-swap="innerHTML">List PDFs</button>
+        <div id="list-result"></div>
+      </div>
+    </div>
+
+    <div class="mt-4 rounded-lg border border-stone-300 bg-white p-3">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-sm font-semibold">Parse</h3>
+        <a href="/ui/parser-builder" class="rounded-md border border-stone-300 bg-stone-50 px-2 py-1 text-xs font-semibold text-stone-700 hover:bg-stone-100">Parser Builder</a>
+      </div>
+      <form class="mt-2" hx-post="/ui/pdf/parse" hx-target="#parse-result" hx-swap="innerHTML">
+        <label class="block text-sm text-stone-700" for="parser">Parser</label>
+        <select class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" id="parser" name="parser">
+          <option value="raw">raw</option>
+          <option value="raw-json">raw-json</option>
+        </select>
+        <label class="mt-3 block text-sm text-stone-700" for="parse_path">Server Relative Path</label>
+        <select class="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" id="parse_path" name="path" required>
+          <option value="" selected disabled>Run "List PDFs" to load paths</option>
+        </select>
+        <button class="mt-3 w-full rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-3 py-2 text-sm font-semibold text-white shadow hover:brightness-105" type="submit">Parse</button>
+      </form>
+      <div id="parse-result"></div>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const buttons = Array.from(document.querySelectorAll('.tab-btn'))
+      const panels = Array.from(document.querySelectorAll('.tab-panel'))
+
+      function setActive(button) {
+        for (const b of buttons) {
+          const selected = b === button
+          b.setAttribute('aria-selected', selected ? 'true' : 'false')
+          b.classList.toggle('bg-teal-700', selected)
+          b.classList.toggle('text-white', selected)
+          b.classList.toggle('bg-stone-100', !selected)
+          b.classList.toggle('text-stone-700', !selected)
+        }
+
+        const target = button.getAttribute('data-tab-target')
+        for (const panel of panels) {
+          panel.classList.toggle('hidden', panel.id !== target)
+        }
+      }
+
+      for (const button of buttons) {
+        button.addEventListener('click', () => setActive(button))
+      }
+
+      document.addEventListener('keydown', (event) => {
+        const currentIndex = buttons.findIndex((b) => b.getAttribute('aria-selected') === 'true')
+        if (currentIndex === -1) {
+          return
+        }
+
+        let nextIndex = currentIndex
+        if (event.key === 'ArrowRight') {
+          nextIndex = (currentIndex + 1) % buttons.length
+        } else if (event.key === 'ArrowLeft') {
+          nextIndex = (currentIndex - 1 + buttons.length) % buttons.length
+        } else {
+          return
+        }
+
+        event.preventDefault()
+        buttons[nextIndex].focus()
+        setActive(buttons[nextIndex])
+      })
+    })()
+  </script>
+</main>
+</body>
+</html>
+{{end}}

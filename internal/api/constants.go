@@ -4,6 +4,7 @@ const (
 	PDFListPath   = "/api/v1/pdf"
 	PDFUploadPath = "/api/v1/pdf/upload"
 	PDFParsePath  = "/api/v1/pdf/parse"
+	PDFFilePath   = "/api/v1/pdf/file"
 )
 
 const (

@@ -85,3 +85,21 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 
 	return "", fmt.Errorf("Unknown parser: %s", parserName)
 }
+
+func (s pdfService) pdfFullPath(relativePath string) (string, error) {
+	cleanPath, err := cleanPDFPath(relativePath)
+	if err != nil {
+		return "", err
+	}
+
+	fullPath, err := s.storage.fullPath(cleanPath)
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := os.Stat(fullPath); err != nil {
+		return "", err
+	}
+
+	return fullPath, nil
+}

@@ -62,6 +62,29 @@ func pdfListHandler(service pdfService) http.HandlerFunc {
 	}
 }
 
+func pdfFileHandler(service pdfService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Query().Get(api.PDFFormPath)
+		fullPath, err := service.pdfFullPath(path)
+		if err != nil {
+			switch {
+			case errors.Is(err, errInvalidPDFPath):
+				http.Error(w, "Invalid server PDF path", http.StatusBadRequest)
+			case errors.Is(err, os.ErrNotExist):
+				http.Error(w, "PDF not found", http.StatusNotFound)
+			case strings.Contains(err.Error(), "must end with .pdf"):
+				http.Error(w, "Invalid server PDF path", http.StatusBadRequest)
+			default:
+				http.Error(w, "Could not read PDF", http.StatusInternalServerError)
+			}
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/pdf")
+		http.ServeFile(w, r, fullPath)
+	}
+}
+
 func pdfParseHandler(service pdfService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
