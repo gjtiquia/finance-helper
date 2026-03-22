@@ -102,9 +102,9 @@ func TestPDFListHandlerRecursive(t *testing.T) {
 	tempDir := t.TempDir()
 	service := newPDFService(newPDFStorage(tempDir))
 
-	seedPDF(t, tempDir, "z-last.pdf", "%PDF-1.4\nlast\n")
-	seedPDF(t, tempDir, "statements/chase/a.pdf", "%PDF-1.4\na\n")
-	seedPDF(t, tempDir, "statements/amex/b.pdf", "%PDF-1.4\nb\n")
+	createDummyFile(t, tempDir, "z-last.pdf", "%PDF-1.4\nlast\n")
+	createDummyFile(t, tempDir, "statements/chase/a.pdf", "%PDF-1.4\na\n")
+	createDummyFile(t, tempDir, "statements/amex/b.pdf", "%PDF-1.4\nb\n")
 
 	req := httptest.NewRequest(http.MethodGet, api.PDFListPath, nil)
 	rec := httptest.NewRecorder()
@@ -155,7 +155,7 @@ func TestPDFParseHandlerMissingFile(t *testing.T) {
 func TestPDFParseHandlerUnknownParser(t *testing.T) {
 	tempDir := t.TempDir()
 	service := newPDFService(newPDFStorage(tempDir))
-	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
+	createDummyFile(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
 
 	form := url.Values{
 		api.PDFFormParser: []string{"unknown"},
@@ -181,7 +181,7 @@ func splitNonEmptyLines(value string) []string {
 	return strings.Split(trimmed, "\n")
 }
 
-func seedPDF(t *testing.T, root string, relativePath string, contents string) {
+func createDummyFile(t *testing.T, root string, relativePath string, contents string) {
 	t.Helper()
 
 	fullPath := filepath.Join(root, filepath.FromSlash(relativePath))
