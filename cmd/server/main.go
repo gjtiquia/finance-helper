@@ -22,6 +22,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", webApp.homeHandler)
+	mux.HandleFunc("GET /ui/manual-input", webApp.manualInputHandler)
 	mux.HandleFunc("GET /ui/parser-builder", webApp.parserBuilderHandler)
 	mux.HandleFunc("GET /ui/status", webApp.statusHandler)
 	mux.HandleFunc("POST /ui/connect", webApp.connectHandler)

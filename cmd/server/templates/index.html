@@ -27,11 +27,16 @@
   <h1 class="text-4xl tracking-tight">finance-helper</h1>
   <p class="mt-1 text-stone-600">Tabbed frontend using Go templates and htmx.</p>
 
-  <nav class="mt-6 overflow-x-auto" role="tablist" aria-label="finance helper workflows">
-    <div class="inline-flex min-w-full gap-2 rounded-xl border border-stone-300/80 bg-amber-50/70 p-2 shadow-lg shadow-stone-300/30 md:min-w-0">
-      <button id="tab-connect" type="button" role="tab" aria-selected="true" aria-controls="panel-connect" data-tab-target="panel-connect" class="tab-btn flex-1 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition">Connect</button>
-      <button id="tab-status" type="button" role="tab" aria-selected="false" aria-controls="panel-status" data-tab-target="panel-status" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">Status</button>
-      <button id="tab-pdf" type="button" role="tab" aria-selected="false" aria-controls="panel-pdf" data-tab-target="panel-pdf" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">PDF</button>
+  <nav class="mt-6" role="tablist" aria-label="finance helper workflows">
+    <div class="flex flex-col gap-2 md:flex-row md:items-center">
+      <div class="overflow-x-auto">
+        <div class="inline-flex min-w-full gap-2 rounded-xl border border-stone-300/80 bg-amber-50/70 p-2 shadow-lg shadow-stone-300/30 md:min-w-0">
+          <button id="tab-connect" type="button" role="tab" aria-selected="true" aria-controls="panel-connect" data-tab-target="panel-connect" class="tab-btn flex-1 rounded-md bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition">Connect</button>
+          <button id="tab-status" type="button" role="tab" aria-selected="false" aria-controls="panel-status" data-tab-target="panel-status" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">Status</button>
+          <button id="tab-pdf" type="button" role="tab" aria-selected="false" aria-controls="panel-pdf" data-tab-target="panel-pdf" class="tab-btn flex-1 rounded-md bg-stone-100 px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-200">PDF</button>
+        </div>
+      </div>
+      <a href="/ui/manual-input" class="shrink-0 rounded-md border border-stone-300 bg-stone-50 px-3 py-2 text-sm font-semibold text-stone-700 shadow hover:bg-stone-100">Manual Input</a>
     </div>
   </nav>
 

@@ -1,0 +1,245 @@
+{{define "manual_input"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>manual input</title>
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['Iowan Old Style', 'Palatino Linotype', 'Palatino', 'serif'],
+              mono: ['Menlo', 'Consolas', 'monospace']
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="font-display text-stone-900 bg-[radial-gradient(circle_at_top_right,_#efe6d9,_#f4f1ea)] min-h-screen">
+<main class="mx-auto max-w-4xl px-4 py-6 md:py-10">
+  <div class="flex items-center justify-between gap-3">
+    <h1 class="text-3xl tracking-tight">Manual Input</h1>
+    <a href="/" class="rounded-md border border-stone-300 bg-stone-50 px-3 py-1.5 text-sm font-semibold text-stone-700 hover:bg-stone-100">Back</a>
+  </div>
+
+  <p class="mt-2 text-sm text-stone-600">Use arrow keys or <span class="font-mono">h j k l</span> to move. Press <span class="font-mono">i</span>, <span class="font-mono">a</span>, or <span class="font-mono">Enter</span> to edit. Press <span class="font-mono">Esc</span> to return to normal mode.</p>
+
+  <section class="mt-5 rounded-xl border border-stone-300/80 bg-amber-50/70 p-4 shadow-lg shadow-stone-300/30">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-lg font-semibold">Grid</h2>
+      <div id="mode-indicator" class="rounded-md border border-teal-800/60 bg-teal-800 px-2.5 py-1 font-mono text-xs font-semibold tracking-wide text-white">-- NORMAL --</div>
+    </div>
+
+    <div id="grid-shell" class="mt-3 overflow-x-auto rounded-lg border border-stone-300 bg-white p-2 outline-none focus:ring-2 focus:ring-teal-700/50" tabindex="0" aria-label="Manual input table keyboard region">
+      <table class="w-full min-w-[680px] border-collapse" role="grid" aria-label="Manual input table">
+        <thead>
+          <tr>
+            <th class="border border-stone-300 bg-stone-100 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-600">Col 1</th>
+            <th class="border border-stone-300 bg-stone-100 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-600">Col 2</th>
+            <th class="border border-stone-300 bg-stone-100 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-600">Col 3</th>
+            <th class="border border-stone-300 bg-stone-100 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-600">Col 4</th>
+            <th class="border border-stone-300 bg-stone-100 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-stone-600">Col 5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="0" data-col="0" data-value="R1C1"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R1C1</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R1C1" aria-label="Row 1 Column 1"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="0" data-col="1" data-value="R1C2"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R1C2</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R1C2" aria-label="Row 1 Column 2"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="0" data-col="2" data-value="R1C3"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R1C3</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R1C3" aria-label="Row 1 Column 3"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="0" data-col="3" data-value="R1C4"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R1C4</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R1C4" aria-label="Row 1 Column 4"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="0" data-col="4" data-value="R1C5"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R1C5</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R1C5" aria-label="Row 1 Column 5"></div></td>
+          </tr>
+          <tr>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="1" data-col="0" data-value="R2C1"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R2C1</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R2C1" aria-label="Row 2 Column 1"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="1" data-col="1" data-value="R2C2"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R2C2</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R2C2" aria-label="Row 2 Column 2"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="1" data-col="2" data-value="R2C3"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R2C3</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R2C3" aria-label="Row 2 Column 3"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="1" data-col="3" data-value="R2C4"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R2C4</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R2C4" aria-label="Row 2 Column 4"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="1" data-col="4" data-value="R2C5"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R2C5</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R2C5" aria-label="Row 2 Column 5"></div></td>
+          </tr>
+          <tr>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="2" data-col="0" data-value="R3C1"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R3C1</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R3C1" aria-label="Row 3 Column 1"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="2" data-col="1" data-value="R3C2"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R3C2</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R3C2" aria-label="Row 3 Column 2"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="2" data-col="2" data-value="R3C3"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R3C3</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R3C3" aria-label="Row 3 Column 3"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="2" data-col="3" data-value="R3C4"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R3C4</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R3C4" aria-label="Row 3 Column 4"></div></td>
+            <td class="grid-cell border border-stone-300 p-0 align-top" data-row="2" data-col="4" data-value="R3C5"><div class="relative min-h-10"><div class="cell-view px-3 py-2 text-sm">R3C5</div><input class="cell-edit absolute inset-0 hidden w-full border-0 bg-[#fffef6] px-3 py-2 text-sm outline-none" type="text" value="R3C5" aria-label="Row 3 Column 5"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    (() => {
+      const gridShell = document.getElementById('grid-shell')
+      const modeIndicator = document.getElementById('mode-indicator')
+      const cells = Array.from(document.querySelectorAll('.grid-cell'))
+
+      const maxRow = Math.max(...cells.map((cell) => Number(cell.dataset.row)))
+      const maxCol = Math.max(...cells.map((cell) => Number(cell.dataset.col)))
+
+      let selectedRow = 0
+      let selectedCol = 0
+      let mode = 'normal'
+
+      function setMode(nextMode) {
+        mode = nextMode
+        modeIndicator.textContent = mode === 'insert' ? '-- INSERT --' : '-- NORMAL --'
+        modeIndicator.classList.toggle('bg-teal-800', mode === 'normal')
+        modeIndicator.classList.toggle('border-teal-800/60', mode === 'normal')
+        modeIndicator.classList.toggle('bg-amber-700', mode === 'insert')
+        modeIndicator.classList.toggle('border-amber-800/60', mode === 'insert')
+      }
+
+      function getCell(row, col) {
+        return document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`)
+      }
+
+      function syncCellDisplay(cell) {
+        const view = cell.querySelector('.cell-view')
+        const input = cell.querySelector('.cell-edit')
+        const value = input.value
+        cell.dataset.value = value
+        view.textContent = value
+      }
+
+      function refreshSelection() {
+        for (const cell of cells) {
+          const row = Number(cell.dataset.row)
+          const col = Number(cell.dataset.col)
+          const isSelected = row === selectedRow && col === selectedCol
+          const view = cell.querySelector('.cell-view')
+          const input = cell.querySelector('.cell-edit')
+
+          cell.classList.toggle('bg-teal-50', isSelected && mode === 'normal')
+          cell.classList.toggle('ring-2', isSelected)
+          cell.classList.toggle('ring-teal-700', isSelected && mode === 'normal')
+          cell.classList.toggle('ring-amber-700', isSelected && mode === 'insert')
+          cell.classList.toggle('ring-inset', isSelected)
+
+          if (isSelected && mode === 'insert') {
+            view.classList.add('hidden')
+            input.classList.remove('hidden')
+          } else {
+            syncCellDisplay(cell)
+            input.classList.add('hidden')
+            view.classList.remove('hidden')
+          }
+        }
+      }
+
+      function selectCell(row, col) {
+        selectedRow = Math.max(0, Math.min(maxRow, row))
+        selectedCol = Math.max(0, Math.min(maxCol, col))
+        refreshSelection()
+      }
+
+      function moveSelection(rowDelta, colDelta) {
+        selectCell(selectedRow + rowDelta, selectedCol + colDelta)
+      }
+
+      function enterInsertMode(cursorPosition) {
+        setMode('insert')
+        refreshSelection()
+        const activeCell = getCell(selectedRow, selectedCol)
+        const input = activeCell.querySelector('.cell-edit')
+        input.focus()
+
+        if (cursorPosition === 'start') {
+          input.setSelectionRange(0, 0)
+        } else {
+          const end = input.value.length
+          input.setSelectionRange(end, end)
+        }
+      }
+
+      function enterNormalMode() {
+        const activeCell = getCell(selectedRow, selectedCol)
+        syncCellDisplay(activeCell)
+        setMode('normal')
+        refreshSelection()
+        gridShell.focus()
+      }
+
+      for (const cell of cells) {
+        cell.addEventListener('click', () => {
+          const row = Number(cell.dataset.row)
+          const col = Number(cell.dataset.col)
+          if (mode === 'insert') {
+            enterNormalMode()
+          }
+          selectCell(row, col)
+          gridShell.focus()
+        })
+
+        cell.addEventListener('dblclick', () => {
+          const row = Number(cell.dataset.row)
+          const col = Number(cell.dataset.col)
+          selectCell(row, col)
+          enterInsertMode('end')
+        })
+
+        const input = cell.querySelector('.cell-edit')
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault()
+            enterNormalMode()
+            return
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            enterNormalMode()
+          }
+        })
+      }
+
+      gridShell.addEventListener('keydown', (event) => {
+        if (mode === 'insert') {
+          return
+        }
+
+        if (event.key === 'ArrowLeft' || event.key === 'h') {
+          event.preventDefault()
+          moveSelection(0, -1)
+          return
+        }
+        if (event.key === 'ArrowRight' || event.key === 'l') {
+          event.preventDefault()
+          moveSelection(0, 1)
+          return
+        }
+        if (event.key === 'ArrowUp' || event.key === 'k') {
+          event.preventDefault()
+          moveSelection(-1, 0)
+          return
+        }
+        if (event.key === 'ArrowDown' || event.key === 'j') {
+          event.preventDefault()
+          moveSelection(1, 0)
+          return
+        }
+        if (event.key === 'Enter' || event.key === 'a') {
+          event.preventDefault()
+          enterInsertMode('end')
+          return
+        }
+        if (event.key === 'i') {
+          event.preventDefault()
+          enterInsertMode('start')
+        }
+      })
+
+      setMode('normal')
+      selectCell(0, 0)
+      gridShell.focus()
+    })()
+  </script>
+</main>
+</body>
+</html>
+{{end}}

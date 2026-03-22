@@ -100,6 +100,13 @@ func (a *webApp) parserBuilderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (a *webApp) manualInputHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := a.tmpl.ExecuteTemplate(w, "manual_input", nil); err != nil {
+		http.Error(w, "Could not render page", http.StatusInternalServerError)
+	}
+}
+
 func (a *webApp) statusHandler(w http.ResponseWriter, r *http.Request) {
 	serverURL, err := configuredServerURLFromCookie(r)
 	if err != nil {
