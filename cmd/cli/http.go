@@ -11,12 +11,7 @@ import (
 	"time"
 )
 
-func getText(apiPath string) (string, error) {
-	serverURL, err := configuredServerURL()
-	if err != nil {
-		return "", err
-	}
-
+func getTextAtServerURL(serverURL string, apiPath string) (string, error) {
 	resp, err := cliHTTPClient().Get(serverURL + apiPath)
 	if err != nil {
 		return "", fmt.Errorf("Could not reach server")
@@ -24,6 +19,15 @@ func getText(apiPath string) (string, error) {
 	defer resp.Body.Close()
 
 	return readTextResponse(resp)
+}
+
+func getText(apiPath string) (string, error) {
+	serverURL, err := configuredServerURL()
+	if err != nil {
+		return "", err
+	}
+
+	return getTextAtServerURL(serverURL, apiPath)
 }
 
 func postFormText(apiPath string, form url.Values) (string, error) {

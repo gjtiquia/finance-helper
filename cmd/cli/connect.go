@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 func connect(w io.Writer, rawURL string) error {
@@ -66,24 +64,12 @@ func isPort(value string) bool {
 }
 
 func pingServer(serverURL string) error {
-	client := http.Client{Timeout: 5 * time.Second}
-
-	resp, err := client.Get(serverURL + "/api/")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status: %s", resp.Status)
-	}
-
-	body, err := io.ReadAll(resp.Body)
+	response, err := getTextAtServerURL(serverURL, "/api/")
 	if err != nil {
 		return err
 	}
 
-	if strings.TrimSpace(string(body)) != "server is running" {
+	if strings.TrimSpace(response) != "server is running" {
 		return fmt.Errorf("unexpected response body")
 	}
 
