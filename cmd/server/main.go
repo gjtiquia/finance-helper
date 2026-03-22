@@ -10,6 +10,10 @@ import (
 
 func main() {
 	pdfService := newPDFService(newPDFStorage("data/pdf"))
+	webApp, err := newWebApp()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -17,10 +21,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		fmt.Fprintln(w, "TODO : web app home page")
-	})
+	mux.HandleFunc("GET /", webApp.homeHandler)
+	mux.HandleFunc("GET /ui/status", webApp.statusHandler)
+	mux.HandleFunc("POST /ui/connect", webApp.connectHandler)
+	mux.HandleFunc("GET /ui/pdf/list", webApp.pdfListHandler)
+	mux.HandleFunc("POST /ui/pdf/upload", webApp.pdfUploadHandler)
+	mux.HandleFunc("POST /ui/pdf/parse", webApp.pdfParseHandler)
 	mux.HandleFunc("GET /api/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		fmt.Fprintln(w, "server is running")
