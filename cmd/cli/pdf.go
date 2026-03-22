@@ -57,6 +57,7 @@ func printPDFHelp(w io.Writer) {
 	fmt.Fprintln(w, "  finance-helper pdf upload ./statement.pdf statements/chase/2026-03.pdf")
 	fmt.Fprintln(w, "  finance-helper pdf list")
 	fmt.Fprintln(w, "  finance-helper pdf parse raw statements/chase/2026-03.pdf")
+	fmt.Fprintln(w, "  finance-helper pdf parse raw-json statements/chase/2026-03.pdf")
 }
 
 func pdfUpload(w io.Writer, localPath string, serverPath string) error {
@@ -105,7 +106,7 @@ func pdfList(w io.Writer) error {
 }
 
 func pdfParse(w io.Writer, parserName string, serverPath string) error {
-	if parserName != api.PDFParserRaw {
+	if parserName != api.PDFParserRaw && parserName != api.PDFParserRawJSON {
 		return fmt.Errorf("Unknown parser: %s", parserName)
 	}
 

@@ -86,7 +86,11 @@ func pdfParseHandler(service pdfService) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		contentType := "text/plain; charset=utf-8"
+		if r.FormValue(api.PDFFormParser) == api.PDFParserRawJSON {
+			contentType = "application/json; charset=utf-8"
+		}
+		w.Header().Set("Content-Type", contentType)
 		fmt.Fprintln(w, result)
 	}
 }

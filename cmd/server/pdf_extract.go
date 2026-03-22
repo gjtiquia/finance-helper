@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -12,7 +13,11 @@ import (
 	"rsc.io/pdf"
 )
 
-const pdfLineTolerance = 3.0
+const (
+	pdfLineMergeTolerance = 3.0
+	pdfMinimumWordGap     = 1.0
+	pdfWordGapFontRatio   = 0.25
+)
 
 type extractedTextRun struct {
 	text     string
@@ -22,56 +27,106 @@ type extractedTextRun struct {
 	fontSize float64
 }
 
-func extractPlainTextFromPDF(path string) (string, error) {
-	result, err := extractPlainText(path)
-	if err == nil {
-		return result, nil
-	}
-
-	repairedPath, repairErr := rewritePDFWithGhostscript(path)
-	if repairErr != nil {
-		return "", fmt.Errorf("%v (ghostscript fallback failed: %v)", err, repairErr)
-	}
-	defer os.RemoveAll(filepath.Dir(repairedPath))
-
-	return extractPlainText(repairedPath)
+type extractedPDFDocument struct {
+	PageCount int                `json:"page_count"`
+	Pages     []extractedPDFPage `json:"pages"`
 }
 
-func extractPlainText(path string) (string, error) {
-	reader, err := pdf.Open(path)
+type extractedPDFPage struct {
+	Page     int                `json:"page"`
+	MediaBox []float64          `json:"media_box,omitempty"`
+	CropBox  []float64          `json:"crop_box,omitempty"`
+	Text     []extractedPDFText `json:"text"`
+}
+
+type extractedPDFText struct {
+	Text     string  `json:"text"`
+	X        float64 `json:"x"`
+	Y        float64 `json:"y"`
+	Width    float64 `json:"width"`
+	FontSize float64 `json:"-"`
+}
+
+func extractPlainTextFromPDF(path string) (string, error) {
+	document, err := extractPDFDocument(path)
 	if err != nil {
 		return "", err
 	}
 
-	var builder strings.Builder
-	totalPages := reader.NumPage()
-	for pageNumber := 1; pageNumber <= totalPages; pageNumber++ {
+	return renderPlainText(document), nil
+}
+
+func extractRawJSONFromPDF(path string) (string, error) {
+	document, err := extractPDFDocument(path)
+	if err != nil {
+		return "", err
+	}
+
+	formatted, err := json.MarshalIndent(document, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return string(formatted), nil
+}
+
+func extractPDFDocument(path string) (extractedPDFDocument, error) {
+	document, err := extractPDFDocumentDirect(path)
+	if err == nil {
+		return document, nil
+	}
+
+	repairedPath, repairErr := rewritePDFWithGhostscript(path)
+	if repairErr != nil {
+		return extractedPDFDocument{}, fmt.Errorf("%v (ghostscript fallback failed: %v)", err, repairErr)
+	}
+	defer os.RemoveAll(filepath.Dir(repairedPath))
+
+	document, repairedErr := extractPDFDocumentDirect(repairedPath)
+	if repairedErr != nil {
+		return extractedPDFDocument{}, fmt.Errorf("%v (ghostscript retry failed: %v)", err, repairedErr)
+	}
+
+	return document, nil
+}
+
+func extractPDFDocumentDirect(path string) (extractedPDFDocument, error) {
+	reader, err := pdf.Open(path)
+	if err != nil {
+		return extractedPDFDocument{}, err
+	}
+
+	document := extractedPDFDocument{
+		PageCount: reader.NumPage(),
+		Pages:     make([]extractedPDFPage, 0, reader.NumPage()),
+	}
+
+	for pageNumber := 1; pageNumber <= reader.NumPage(); pageNumber++ {
 		page := reader.Page(pageNumber)
 		if page.V.IsNull() {
 			continue
 		}
 
-		if builder.Len() > 0 {
-			builder.WriteString("\n\n")
-		}
-
-		fmt.Fprintf(&builder, "Page %d", pageNumber)
-
 		content, err := pageContent(page)
 		if err != nil {
-			return "", err
+			return extractedPDFDocument{}, err
 		}
 
-		lines := pageLines(content.Text)
-		if len(lines) == 0 {
-			continue
+		mediaBox := pageBox(page, "MediaBox")
+		cropBox := pageBox(page, "CropBox")
+		if len(cropBox) == 0 && len(mediaBox) > 0 {
+			cropBox = append([]float64(nil), mediaBox...)
 		}
 
-		builder.WriteByte('\n')
-		builder.WriteString(strings.Join(lines, "\n"))
+		document.Pages = append(document.Pages, extractedPDFPage{
+			Page:     pageNumber,
+			MediaBox: mediaBox,
+			CropBox:  cropBox,
+			Text:     extractPageTextItems(content.Text),
+		})
 	}
 
-	return builder.String(), nil
+	return document, nil
 }
 
 func rewritePDFWithGhostscript(path string) (string, error) {
@@ -106,7 +161,41 @@ func pageContent(page pdf.Page) (content pdf.Content, err error) {
 	return page.Content(), nil
 }
 
-func pageLines(texts []pdf.Text) []string {
+func pageBox(page pdf.Page, key string) []float64 {
+	for value := page.V; !value.IsNull(); value = value.Key("Parent") {
+		box := value.Key(key)
+		if box.IsNull() || box.Len() != 4 {
+			continue
+		}
+
+		return []float64{
+			box.Index(0).Float64(),
+			box.Index(1).Float64(),
+			box.Index(2).Float64(),
+			box.Index(3).Float64(),
+		}
+	}
+
+	return nil
+}
+
+func extractPageTextItems(texts []pdf.Text) []extractedPDFText {
+	runs := sortedTextRuns(texts)
+	items := make([]extractedPDFText, 0, len(runs))
+	for _, run := range runs {
+		items = append(items, extractedPDFText{
+			Text:     run.text,
+			X:        run.x,
+			Y:        run.y,
+			Width:    run.width,
+			FontSize: run.fontSize,
+		})
+	}
+
+	return items
+}
+
+func sortedTextRuns(texts []pdf.Text) []extractedTextRun {
 	runs := make([]extractedTextRun, 0, len(texts))
 	for _, text := range texts {
 		value := strings.TrimSpace(text.S)
@@ -128,7 +217,7 @@ func pageLines(texts []pdf.Text) []string {
 	}
 
 	sort.SliceStable(runs, func(i int, j int) bool {
-		if delta := runs[i].y - runs[j].y; math.Abs(delta) > pdfLineTolerance {
+		if delta := runs[i].y - runs[j].y; math.Abs(delta) > pdfLineMergeTolerance {
 			return runs[i].y > runs[j].y
 		}
 
@@ -139,12 +228,52 @@ func pageLines(texts []pdf.Text) []string {
 		return runs[i].text < runs[j].text
 	})
 
+	return runs
+}
+
+func renderPlainText(document extractedPDFDocument) string {
+	var builder strings.Builder
+	for _, page := range document.Pages {
+		if builder.Len() > 0 {
+			builder.WriteString("\n\n")
+		}
+
+		fmt.Fprintf(&builder, "Page %d", page.Page)
+
+		lines := groupTextIntoLines(page.Text)
+		if len(lines) == 0 {
+			continue
+		}
+
+		builder.WriteByte('\n')
+		builder.WriteString(strings.Join(lines, "\n"))
+	}
+
+	return builder.String()
+}
+
+func groupTextIntoLines(texts []extractedPDFText) []string {
+	if len(texts) == 0 {
+		return nil
+	}
+
+	runs := make([]extractedTextRun, 0, len(texts))
+	for _, text := range texts {
+		runs = append(runs, extractedTextRun{
+			text:     text.Text,
+			x:        text.X,
+			y:        text.Y,
+			width:    text.Width,
+			fontSize: text.FontSize,
+		})
+	}
+
 	var lines []string
 	currentLine := []extractedTextRun{runs[0]}
 	currentY := runs[0].y
 
 	for _, run := range runs[1:] {
-		if math.Abs(run.y-currentY) <= pdfLineTolerance {
+		if math.Abs(run.y-currentY) <= pdfLineMergeTolerance {
 			currentLine = append(currentLine, run)
 			continue
 		}
@@ -176,6 +305,6 @@ func renderLine(runs []extractedTextRun) string {
 
 func shouldInsertSpace(previous extractedTextRun, current extractedTextRun) bool {
 	gap := current.x - (previous.x + previous.width)
-	threshold := math.Max(1, math.Min(previous.fontSize, current.fontSize)*0.25)
+	threshold := math.Max(pdfMinimumWordGap, math.Min(previous.fontSize, current.fontSize)*pdfWordGapFontRatio)
 	return gap > threshold
 }

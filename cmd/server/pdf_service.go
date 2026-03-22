@@ -46,7 +46,7 @@ func (s pdfService) list() ([]string, error) {
 }
 
 func (s pdfService) parse(parserName string, relativePath string) (string, error) {
-	if parserName != api.PDFParserRaw {
+	if parserName != api.PDFParserRaw && parserName != api.PDFParserRawJSON {
 		return "", fmt.Errorf("Unknown parser: %s", parserName)
 	}
 
@@ -68,10 +68,20 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 		return "", err
 	}
 
-	result, err := extractPlainTextFromPDF(fullPath)
-	if err != nil {
-		return "", err
+	switch parserName {
+	case api.PDFParserRaw:
+		result, err := extractPlainTextFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
+	case api.PDFParserRawJSON:
+		result, err := extractRawJSONFromPDF(fullPath)
+		if err != nil {
+			return "", err
+		}
+		return result, nil
 	}
 
-	return result, nil
+	return "", fmt.Errorf("Unknown parser: %s", parserName)
 }
