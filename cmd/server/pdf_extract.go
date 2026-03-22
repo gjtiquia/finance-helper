@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"os/exec"
@@ -10,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"rsc.io/pdf"
+	"github.com/ledongthuc/pdf"
 )
 
 const (
@@ -91,10 +92,11 @@ func extractPDFDocument(path string) (extractedPDFDocument, error) {
 }
 
 func extractPDFDocumentDirect(path string) (extractedPDFDocument, error) {
-	reader, err := pdf.Open(path)
+	file, reader, err := pdf.Open(path)
 	if err != nil {
 		return extractedPDFDocument{}, err
 	}
+	defer closePDFFile(file)
 
 	document := extractedPDFDocument{
 		PageCount: reader.NumPage(),
@@ -127,6 +129,12 @@ func extractPDFDocumentDirect(path string) (extractedPDFDocument, error) {
 	}
 
 	return document, nil
+}
+
+func closePDFFile(file io.Closer) {
+	if file != nil {
+		_ = file.Close()
+	}
 }
 
 func rewritePDFWithGhostscript(path string) (string, error) {
