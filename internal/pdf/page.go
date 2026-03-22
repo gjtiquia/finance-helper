@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"sort"
 	"strings"
 )
@@ -679,7 +680,7 @@ func (p Page) GetTextByColumn() (Columns, error) {
 
 // Row represents the contents of a row
 type Row struct {
-	Position int64
+	Position float64
 	Content  TextHorizontal
 }
 
@@ -708,6 +709,11 @@ func (p Page) GetTextChunks() (chunks []TextChunk, err error) {
 
 // GetTextByRow returns the page's all text grouped by rows
 func (p Page) GetTextByRow() (Rows, error) {
+	return p.GetTextByRowTolerance(0)
+}
+
+// GetTextByRowTolerance returns the page's text grouped by rows using a Y tolerance.
+func (p Page) GetTextByRowTolerance(tolerance float64) (Rows, error) {
 	result := Rows{}
 	var err error
 
@@ -728,7 +734,7 @@ func (p Page) GetTextByRow() (Rows, error) {
 		var currentRow *Row
 		rowFound := false
 		for _, row := range result {
-			if int64(chunk.Y) == row.Position {
+			if sameRowPosition(chunk.Y, row.Position, tolerance) {
 				currentRow = row
 				rowFound = true
 				break
@@ -737,13 +743,14 @@ func (p Page) GetTextByRow() (Rows, error) {
 
 		if !rowFound {
 			currentRow = &Row{
-				Position: int64(chunk.Y),
+				Position: chunk.Y,
 				Content:  TextHorizontal{},
 			}
 			result = append(result, currentRow)
 		}
 
 		currentRow.Content = append(currentRow.Content, text)
+		currentRow.Position = averageRowPosition(currentRow.Content)
 	}
 
 	for _, row := range result {
@@ -755,6 +762,26 @@ func (p Page) GetTextByRow() (Rows, error) {
 	})
 
 	return result, err
+}
+
+func sameRowPosition(y float64, position float64, tolerance float64) bool {
+	if tolerance <= 0 {
+		return int64(y) == int64(position)
+	}
+	return math.Abs(y-position) <= tolerance
+}
+
+func averageRowPosition(content TextHorizontal) float64 {
+	if len(content) == 0 {
+		return 0
+	}
+
+	total := 0.0
+	for _, text := range content {
+		total += text.Y
+	}
+
+	return total / float64(len(content))
 }
 
 func (p Page) collectTextChunks() []TextChunk {
