@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ledongthuc/pdf"
+	"github.com/gjtiquia/finance-helper/internal/pdf"
 )
 
 const (

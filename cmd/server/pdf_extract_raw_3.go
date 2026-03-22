@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ledongthuc/pdf"
+	"github.com/gjtiquia/finance-helper/internal/pdf"
 )
 
 func extractRaw3PlainTextFromPDF(path string) (string, error) {

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ledongthuc/pdf"
+	"github.com/gjtiquia/finance-helper/internal/pdf"
 )
 
 type extractedPDFDocument struct {

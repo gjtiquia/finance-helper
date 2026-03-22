@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 
-	"github.com/ledongthuc/pdf"
+	"github.com/gjtiquia/finance-helper/internal/pdf"
 )
 
 func extractRaw2PlainTextFromPDF(path string) (string, error) {
