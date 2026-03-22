@@ -55,7 +55,7 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 		return "", err
 	}
 
-	size, err := s.storage.fileSize(cleanPath)
+	fullPath, err := s.storage.fullPath(cleanPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return "", err
@@ -64,5 +64,14 @@ func (s pdfService) parse(parserName string, relativePath string) (string, error
 		return "", err
 	}
 
-	return fmt.Sprintf("TODO : parse PDF, returning file size for now: %d", size), nil
+	if _, err := os.Stat(fullPath); err != nil {
+		return "", err
+	}
+
+	result, err := extractPlainTextFromPDF(fullPath)
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }

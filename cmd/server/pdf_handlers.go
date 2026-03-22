@@ -81,7 +81,7 @@ func pdfParseHandler(service pdfService) http.HandlerFunc {
 			case strings.Contains(err.Error(), "must end with .pdf"):
 				http.Error(w, "Invalid server PDF path", http.StatusBadRequest)
 			default:
-				http.Error(w, "Could not read PDF", http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("Could not read PDF: %v", err), http.StatusInternalServerError)
 			}
 			return
 		}

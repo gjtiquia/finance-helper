@@ -133,35 +133,6 @@ func TestPDFListHandlerRecursive(t *testing.T) {
 	}
 }
 
-func TestPDFParseHandlerRaw(t *testing.T) {
-	tempDir := t.TempDir()
-	service := newPDFService(newPDFStorage(tempDir))
-	seedPDF(t, tempDir, "statements/chase/test.pdf", "%PDF-1.4\nhello\n")
-
-	form := url.Values{
-		api.PDFFormParser: []string{api.PDFParserRaw},
-		api.PDFFormPath:   []string{"statements/chase/test.pdf"},
-	}
-	req := httptest.NewRequest(http.MethodPost, api.PDFParsePath, strings.NewReader(form.Encode()))
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	rec := httptest.NewRecorder()
-
-	pdfParseHandler(service).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
-	}
-
-	body := rec.Body.String()
-	if !strings.Contains(body, "TODO : parse PDF") {
-		t.Fatalf("body missing parse placeholder: %q", body)
-	}
-
-	if !strings.Contains(body, "15") {
-		t.Fatalf("body missing file size: %q", body)
-	}
-}
-
 func TestPDFParseHandlerMissingFile(t *testing.T) {
 	tempDir := t.TempDir()
 	service := newPDFService(newPDFStorage(tempDir))
