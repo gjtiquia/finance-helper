@@ -39,6 +39,12 @@ type pdfListData struct {
 	Paths []string
 }
 
+type parserBuilderData struct {
+	Paths        []string
+	SelectedPath string
+	ErrorMessage string
+}
+
 func newWebApp() (*webApp, error) {
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -63,6 +69,33 @@ func (a *webApp) homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := a.tmpl.ExecuteTemplate(w, "index", data); err != nil {
+		http.Error(w, "Could not render page", http.StatusInternalServerError)
+	}
+}
+
+func (a *webApp) parserBuilderHandler(w http.ResponseWriter, r *http.Request) {
+	data := parserBuilderData{}
+
+	body, err := getTextForRequest(r, api.PDFListPath)
+	if err != nil {
+		data.ErrorMessage = err.Error()
+	} else {
+		data.Paths = nonEmptyLines(body)
+	}
+
+	selectedPath := strings.TrimSpace(r.URL.Query().Get(api.PDFFormPath))
+	if selectedPath != "" {
+		if _, err := cleanPDFPath(selectedPath); err != nil {
+			if data.ErrorMessage == "" {
+				data.ErrorMessage = "Invalid server PDF path"
+			}
+		} else {
+			data.SelectedPath = selectedPath
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := a.tmpl.ExecuteTemplate(w, "parser_builder", data); err != nil {
 		http.Error(w, "Could not render page", http.StatusInternalServerError)
 	}
 }
@@ -188,6 +221,34 @@ func (a *webApp) pdfParseHandler(w http.ResponseWriter, r *http.Request) {
 	a.renderPanel(w, panelData{Title: "PDF Parse", Body: body})
 }
 
+func (a *webApp) pdfPreviewHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimSpace(r.URL.Query().Get(api.PDFFormPath))
+	cleanPath, err := cleanPDFPath(path)
+	if err != nil {
+		http.Error(w, "Invalid server PDF path", http.StatusBadRequest)
+		return
+	}
+
+	contentType, body, err := getBinaryForRequest(r, api.PDFFilePath+"?"+url.Values{api.PDFFormPath: []string{cleanPath}}.Encode())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if contentType == "" {
+		contentType = "application/pdf"
+	}
+	if !isPDFResponse(contentType, body) {
+		http.Error(w, "Could not preview PDF", http.StatusBadGateway)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/pdf")
+	if _, err := w.Write(body); err != nil {
+		return
+	}
+}
+
 func (a *webApp) renderPanel(w http.ResponseWriter, data panelData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := a.tmpl.ExecuteTemplate(w, "panel", data); err != nil {
@@ -292,6 +353,30 @@ func postMultipartTextForRequest(r *http.Request, apiPath string, build func(*mu
 	return readTextResponse(resp)
 }
 
+func getBinaryForRequest(r *http.Request, apiPath string) (string, []byte, error) {
+	serverURL, err := configuredServerURLFromCookie(r)
+	if err != nil {
+		return "", nil, err
+	}
+
+	resp, err := webHTTPClient().Get(serverURL + apiPath)
+	if err != nil {
+		return "", nil, fmt.Errorf("Could not reach server")
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil, fmt.Errorf("Could not read server response")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", nil, fmt.Errorf("%s", strings.TrimSpace(string(body)))
+	}
+
+	return resp.Header.Get("Content-Type"), body, nil
+}
+
 func normalizeURL(rawURL string) (string, error) {
 	rawURL = strings.TrimSpace(rawURL)
 	if rawURL == "" {
@@ -377,4 +462,14 @@ func nonEmptyLines(value string) []string {
 	}
 
 	return strings.Split(trimmed, "\n")
+}
+
+func isPDFResponse(contentType string, body []byte) bool {
+	ctype := strings.ToLower(strings.TrimSpace(contentType))
+	if strings.HasPrefix(ctype, "application/pdf") || strings.HasPrefix(ctype, "application/octet-stream") {
+		return true
+	}
+
+	trimmedBody := bytes.TrimLeft(body, " \n\r\t")
+	return bytes.HasPrefix(trimmedBody, []byte("%PDF-"))
 }

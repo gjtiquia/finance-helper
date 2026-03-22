@@ -1,0 +1,68 @@
+{{define "parser_builder"}}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>parser builder</title>
+  <script>
+    window.tailwind = {
+      config: {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['Iowan Old Style', 'Palatino Linotype', 'Palatino', 'serif'],
+              mono: ['Menlo', 'Consolas', 'monospace']
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="font-display text-stone-900 bg-[radial-gradient(circle_at_top_right,_#efe6d9,_#f4f1ea)] min-h-screen">
+<main class="mx-auto max-w-5xl px-4 py-6 md:py-10">
+  <div class="flex items-center justify-between gap-3">
+    <h1 class="text-3xl tracking-tight">Parser Builder</h1>
+    <a href="/" class="rounded-md border border-stone-300 bg-stone-50 px-3 py-1.5 text-sm font-semibold text-stone-700 hover:bg-stone-100">Back</a>
+  </div>
+  <p class="mt-1 text-stone-600">Choose a PDF from server storage and preview it in-browser.</p>
+
+  <section class="mt-6 rounded-xl border border-stone-300/80 bg-amber-50/70 p-4 shadow-lg shadow-stone-300/30">
+    <form method="get" action="/ui/parser-builder">
+      <label class="block text-sm text-stone-700" for="path">PDF</label>
+      <div class="mt-1 flex flex-col gap-2 md:flex-row">
+        <select class="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus:border-teal-700" id="path" name="path" required>
+          {{if .Paths}}
+            <option value="" {{if eq .SelectedPath ""}}selected{{end}} disabled>Select a PDF...</option>
+            {{range .Paths}}
+              <option value="{{.}}" {{if eq $.SelectedPath .}}selected{{end}}>{{.}}</option>
+            {{end}}
+          {{else}}
+            <option value="" selected disabled>No PDFs available</option>
+          {{end}}
+        </select>
+        <button class="rounded-md bg-gradient-to-r from-teal-800 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow hover:brightness-105" type="submit">Preview</button>
+      </div>
+    </form>
+
+    {{if .ErrorMessage}}
+      <div class="mt-3 rounded-md border border-rose-300 bg-rose-50 p-3 text-sm text-rose-900">{{.ErrorMessage}}</div>
+    {{end}}
+  </section>
+
+  <section class="mt-4 rounded-xl border border-stone-300/80 bg-white p-3 shadow-lg shadow-stone-300/30">
+    {{if .SelectedPath}}
+      <div class="mb-2 text-sm text-stone-700">Previewing <span class="font-semibold text-stone-900">{{.SelectedPath}}</span></div>
+      <iframe title="PDF preview" src="/ui/pdf/preview?path={{urlquery .SelectedPath}}" class="h-[70vh] w-full rounded-md border border-stone-300"></iframe>
+    {{else}}
+      <div class="rounded-md border border-dashed border-stone-300 bg-stone-50 p-8 text-center text-sm text-stone-600">
+        Select a PDF and click Preview.
+      </div>
+    {{end}}
+  </section>
+</main>
+</body>
+</html>
+{{end}}
